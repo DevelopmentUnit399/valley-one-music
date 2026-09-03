@@ -16,6 +16,7 @@ const PlayerContextProvider = (props) => {
     const [track, setTrack] = useState(songsData[0])
     const [playStatus, setPlayStatus] = useState(false)
     const [volume, setVolume] = useState(1)
+    const [loading, setLoading] = useState(true)
 
     const isScrubbing = useRef(false)
 
@@ -85,13 +86,15 @@ const PlayerContextProvider = (props) => {
 
     const getSongsData = async () => {
         try {
-            
             const response = await axios.get(`${url}/api/song/list`)
-            setSongsData(response.data.songs)
+            setTimeout(() => {
+                setSongsData(response.data.songs)
+                setLoading(false)
+            }, 1000)
             setTrack(response.data.songs[0])
-
         } catch (error) {
-            
+            console.error("Error fetching songs:", error)
+            setLoading(false)
         }
     }
 
@@ -99,10 +102,13 @@ const PlayerContextProvider = (props) => {
         try {
             
             const response = await axios.get(`${url}/api/album/list`)
-            setAlbumsData(response.data.albums)
+
+            setTimeout(() => {
+                setAlbumsData(response.data.albums)
+            }, 1000)
 
         } catch (error) {
-            
+            console.error("Error fetching albums:", error)
         }
     }
 
@@ -154,7 +160,8 @@ const PlayerContextProvider = (props) => {
         albumsData,
         volume,
         adjustVolume,
-        isScrubbing
+        isScrubbing,
+        loading
     }
     return (
         <PlayerContext.Provider value={contextValue}>

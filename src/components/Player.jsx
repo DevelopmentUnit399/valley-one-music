@@ -17,7 +17,8 @@ const Player = () => {
         next, 
         volume,
         adjustVolume,
-        isScrubbing
+        isScrubbing,
+        loading
     } = useContext(PlayerContext)
 
     const volumeBg = useRef(null)
@@ -128,23 +129,35 @@ const Player = () => {
         <div className="h-[10%] min-h-[70px] bg-black flex justify-between items-center text-white px-2 sm:px-4 select-none gap-2">
             {/* Left section: track info */}
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 max-w-[25%] sm:max-w-[200px]">
-                <img className="w-8 sm:w-12 h-8 sm:h-12 rounded object-cover flex-shrink-0" src={track.image} alt="" />
-                <div className="min-w-0 overflow-hidden">
-                    <p
-                        className={`text-xs sm:text-sm font-semibold leading-tight ${
-                            playStatus ? 'animage-marquee' : 'truncate'
-                        }`}
-                    >
-                        {track.name}
-                    </p>
-                    <p
-                        className={`text-[10px] sm:text-xs text-gray-400 leading-tight ${
-                            playStatus ? 'animate-marquee' : 'truncate'
-                        }`}
-                    >
-                        {track.desc}
-                    </p>
-                </div>
+                {loading || !track ? (
+                    <div className="flex items-center gap-2 sm: gap-3 animate-pulse w-full">
+                        <div className="w-8 sm:w-12 h-8 sm:h-12 rounded bg-zinc-800 shrink-0" />
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                            <div className="h-3 bg-zinc-800 rounded w-16" />
+                            <div className="h-2.5 bg-zinc-800/60 rounded w-16" />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <img className="w-8 sm:w-12 h-8 sm:h-12 rounded object-cover flex-shrink-0" src={track.image} alt="" />
+                        <div className="min-w-0 overflow-hidden">
+                            <p
+                                className={`text-xs sm:text-sm font-semibold leading-tight ${
+                                    playStatus ? 'animage-marquee' : 'truncate'
+                                }`}
+                            >
+                                {track.name}
+                            </p>
+                            <p
+                                className={`text-[10px] sm:text-xs text-gray-400 leading-tight ${
+                                    playStatus ? 'animate-marquee' : 'truncate'
+                                }`}
+                            >
+                                {track.desc}
+                            </p>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Center section: controls & draggable seekbar */}
