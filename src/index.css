@@ -14,3 +14,22 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0%);
+    } 15% {
+        transform: translateX(0%);
+    } 85% {
+        transform: translateX(calc(-100% + 140px));
+    } 100% {
+        transform: translateX(0%)
+    }
+}
+
+.animate-marquee {
+    display: block;
+    width: max-content;
+    white-space: nowrap;
+    animation: marquee 8s linear infinite;
+}

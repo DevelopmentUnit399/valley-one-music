@@ -41,6 +41,8 @@ import img16 from './img16.jpg'
 import song1 from  './song1.mp3'
 import song2 from  './song2.mp3'
 import song3 from  './song3.mp3'
+import volume_mute from './volume_mute.png'
+import v1_logo_icon from './valley-one.png'
 
 export const assets = {
     bell_icon,
@@ -66,7 +68,9 @@ export const assets = {
     arrow_left,
     arrow_right,
     spotify_logo,
-    clock_icon
+    clock_icon,
+    volume_mute,
+    v1_logo_icon
 }
 
 export const albumsData = [
