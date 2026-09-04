@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { auth } from '../../firebase'
+import { auth } from '../firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 
 const AuthContext = createContext()
@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true) // <-- 1. Define loading state
 
   useEffect(() => {
+    let timer
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user)
 

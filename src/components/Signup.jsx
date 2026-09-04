@@ -7,8 +7,19 @@ import {
   GoogleAuthProvider,
   sendEmailVerification 
 } from 'firebase/auth'
-import { auth } from '../../firebase'
+import { auth } from '../firebase'
 import { assets } from '../assets/assets'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase'
+
+export const DEFAULT_SETTINGS = {
+  streamingQuality: 'high',
+  crossfade: 0,
+  autoplay: true,
+  normalizeVolume: false,
+  pushNotifications: true,
+  emailDigest: true
+}
 
 const Signup = () => {
   const [displayName, setDisplayName] = useState('')
@@ -38,6 +49,10 @@ const Signup = () => {
     try {
       // 1. Create the user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+
+      // Seed Firestore preferences
+      await setDoc(doc(db, 'users', user.uid, 'settings', 'preferences'), DEFAULT_SETTINGS)
       
       // 2. Set display name if provided
       if (displayName) {

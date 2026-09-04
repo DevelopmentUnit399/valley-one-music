@@ -9,7 +9,9 @@ import {
   PhoneMultiFactorGenerator,
   RecaptchaVerifier
 } from 'firebase/auth'
-import { auth } from '../../firebase'
+import { auth, db } from '../firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { DEFAULT_SETTINGS } from './Signup'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -43,7 +45,40 @@ const Login = () => {
     return window.loginRecaptchaVerifier
   }
 
-  // Handle standard login and intercept 2FA
+  // Shared handler for resolving MFA challenges across Email & Google
+  const triggerMfaChallenge = async (err) => {
+    try {
+      const resolver = getMultiFactorResolver(auth, err)
+      setMfaResolver(resolver)
+
+      const phoneHint = resolver.hints[0]
+      setMfaPhoneHint(phoneHint.phoneNumber || 'registered phone')
+
+      const phoneAuthProvider = new PhoneAuthProvider(auth)
+      const verifier = setupRecaptcha()
+
+      const phoneInfoOptions = {
+        multiFactorHint: phoneHint,
+        session: resolver.session
+      }
+
+      const vId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, verifier)
+      setMfaVerificationId(vId)
+      setShowMfaModal(true)
+    } catch (mfaErr) {
+      if (window.loginRecaptchaVerifier) {
+        try {
+          window.loginRecaptchaVerifier.clear()
+        } catch (clearErr) {
+          console.error(clearErr)
+        }
+        window.loginRecaptchaVerifier = null
+      }
+      setError(mfaErr.message.replace('Firebase: ', ''))
+    }
+  }
+
+  // Handle standard email/password login
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
@@ -54,36 +89,36 @@ const Login = () => {
       navigate('/')
     } catch (err) {
       if (err.code === 'auth/multi-factor-auth-required') {
-        try {
-          const resolver = getMultiFactorResolver(auth, err)
-          setMfaResolver(resolver)
+        await triggerMfaChallenge(err)
+      } else {
+        setError(err.message.replace('Firebase: ', ''))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
-          // Select the first enrolled phone factor
-          const phoneHint = resolver.hints[0]
-          setMfaPhoneHint(phoneHint.phoneNumber || 'registered phone')
+  // Handle Google Sign-In
+  const handleGoogleSignIn = async () => {
+    setError('')
+    setLoading(true)
+    const provider = new GoogleAuthProvider()
 
-          const phoneAuthProvider = new PhoneAuthProvider(auth)
-          const verifier = setupRecaptcha()
+    try {
+      const result = await signInWithPopup(auth, provider)
+      const user = result.user
 
-          const phoneInfoOptions = {
-            multiFactorHint: phoneHint,
-            session: resolver.session
-          }
+      const userDocRef = doc(db, 'users', user.uid, 'settings', 'preferences')
+      const docSnap = await getDoc(userDocRef)
 
-          const vId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, verifier)
-          setMfaVerificationId(vId)
-          setShowMfaModal(true)
-        } catch (mfaErr) {
-          if (window.loginRecaptchaVerifier) {
-            try {
-              window.loginRecaptchaVerifier.clear()
-            } catch (clearErr) {
-              console.error(clearErr)
-            }
-            window.loginRecaptchaVerifier = null
-          }
-          setError(mfaErr.message.replace('Firebase: ', ''))
-        }
+      if (!docSnap.exists()) {
+        await setDoc(userDocRef, DEFAULT_SETTINGS)
+      }
+
+      navigate('/')
+    } catch (err) {
+      if (err.code === 'auth/multi-factor-auth-required') {
+        await triggerMfaChallenge(err)
       } else {
         setError(err.message.replace('Firebase: ', ''))
       }
@@ -102,8 +137,16 @@ const Login = () => {
       const cred = PhoneAuthProvider.credential(mfaVerificationId, mfaCode)
       const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred)
 
-      await mfaResolver.resolveSignIn(multiFactorAssertion)
-      
+      const userCredential = await mfaResolver.resolveSignIn(multiFactorAssertion)
+      const user = userCredential.user
+
+      // Initialize default preferences doc if missing
+      const userDocRef = doc(db, 'users', user.uid, 'settings', 'preferences')
+      const docSnap = await getDoc(userDocRef)
+      if (!docSnap.exists()) {
+        await setDoc(userDocRef, DEFAULT_SETTINGS)
+      }
+
       // Clean up verifier
       if (window.loginRecaptchaVerifier) {
         try {
@@ -115,22 +158,6 @@ const Login = () => {
       }
 
       setShowMfaModal(false)
-      navigate('/')
-    } catch (err) {
-      setError(err.message.replace('Firebase: ', ''))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Google Sign In
-  const handleGoogleSignIn = async () => {
-    setError('')
-    setLoading(true)
-    const provider = new GoogleAuthProvider()
-
-    try {
-      await signInWithPopup(auth, provider)
       navigate('/')
     } catch (err) {
       setError(err.message.replace('Firebase: ', ''))

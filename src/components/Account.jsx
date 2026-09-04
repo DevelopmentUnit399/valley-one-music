@@ -16,7 +16,7 @@ import {
 } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
 import Navbar from './Navbar'
-import { auth } from '../../firebase'
+import { auth } from '../firebase'
 
 const Account = () => {
     const { currentUser, loading: authLoading } = useAuth()
@@ -40,7 +40,7 @@ const Account = () => {
     const [reauthPassword, setReauthPassword] = useState('')
     const [pendingAction, setPendingAction] = useState(null)
 
-    // 2FA states
+    // 2FA Enrollment states
     const [enrolledFactors, setEnrolledFactors] = useState([])
     const [mfaStep, setMfaStep] = useState('idle') // 'idle' | 'input-phone' | 'input-code'
     const [phoneNumber, setPhoneNumber] = useState('')
@@ -60,7 +60,6 @@ const Account = () => {
     }, [currentUser])
 
     const setupRecaptcha = () => {
-        // 1. If an instance already exists, reuse it rather than re-mounting
         if (window.recaptchaVerifier) {
             return window.recaptchaVerifier
         }
@@ -68,10 +67,8 @@ const Account = () => {
         const container = document.getElementById('recaptcha-container')
         if (!container) return null
 
-        // 2. Clear out any residual markup just in case
         container.innerHTML = ''
 
-        // 3. Create a fresh instance
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             size: 'invisible'
         })
@@ -99,7 +96,7 @@ const Account = () => {
         return false
     }
 
-    // Step 1: Send SMS code with stale credential interception
+    // Step 1: Send SMS code to enroll 2FA
     const handleSendMfaCode = async (e) => {
         if (e) e.preventDefault()
         setStatusMsg({ type: '', text: '' })
@@ -129,8 +126,8 @@ const Account = () => {
                 setMfaStep('input-code')
                 setStatusMsg({ type: 'success', text: `Verification code sent to ${phoneNumber}.` })
             } catch (authErr) {
-                const isStale = 
-                    authErr.code === 'auth/requires-recent-login' || 
+                const isStale =
+                    authErr.code === 'auth/requires-recent-login' ||
                     authErr.message?.includes('CREDENTIAL_TOO_OLD') ||
                     authErr.customData?.message?.includes('CREDENTIAL_TOO_OLD')
 
@@ -203,7 +200,7 @@ const Account = () => {
 
             await multiFactor(currentUser).enroll(multiFactorAssertion, 'Primary Phone')
 
-            setEnrolledFactors(multiFactor(currentUser).enrolledFactors)
+            setEnrolledFactors(multiFactor(currentUser).enrolledFactors || [])
             setMfaStep('idle')
             setPhoneNumber('')
             setVerificationCode('')
@@ -215,20 +212,35 @@ const Account = () => {
         }
     }
 
-    // Unenroll 2FA
-    const handleUnenrollMfa = async (factorUid) => {
+    // Unenroll 2FA with session re-authentication handling
+    const handleUnenrollMfa = async (factor) => {
+        if (!window.confirm(`Are you sure you want to disable 2FA for ${factor.phoneNumber}?`)) {
+            return
+        }
+
         setStatusMsg({ type: '', text: '' })
         setLoading(true)
 
         try {
-            const factorToUnenroll = enrolledFactors.find((f) => f.uid === factorUid)
-            await multiFactor(currentUser).unenroll(factorToUnenroll)
-            setEnrolledFactors(multiFactor(currentUser).enrolledFactors)
-            setStatusMsg({ type: 'success', text: '2FA has been disabled.' })
+            await multiFactor(currentUser).unenroll(factor)
+            setEnrolledFactors(multiFactor(currentUser).enrolledFactors || [])
+            setStatusMsg({ type: 'success', text: 'Two-factor authentication has been disabled.' })
         } catch (err) {
             if (err.code === 'auth/requires-recent-login') {
-                setPendingAction(() => () => handleUnenrollMfa(factorUid))
-                setShowReauthModal(true)
+                const isGoogle = currentUser?.providerData[0]?.providerId === 'google.com'
+                if (isGoogle) {
+                    try {
+                        await reauthenticate()
+                        await multiFactor(currentUser).unenroll(factor)
+                        setEnrolledFactors(multiFactor(currentUser).enrolledFactors || [])
+                        setStatusMsg({ type: 'success', text: 'Two-factor authentication has been disabled.' })
+                    } catch (reAuthErr) {
+                        setStatusMsg({ type: 'error', text: reAuthErr.message.replace('Firebase: ', '') })
+                    }
+                } else {
+                    setPendingAction(() => () => handleUnenrollMfa(factor))
+                    setShowReauthModal(true)
+                }
             } else {
                 setStatusMsg({ type: 'error', text: err.message.replace('Firebase: ', '') })
             }
@@ -543,7 +555,7 @@ const Account = () => {
                                                     <p className="text-[11px] text-zinc-400">{factor.phoneNumber}</p>
                                                 </div>
                                                 <button
-                                                    onClick={() => handleUnenrollMfa(factor.uid)}
+                                                    onClick={() => handleUnenrollMfa(factor)}
                                                     disabled={loading}
                                                     className="text-xs text-red-400 hover:text-red-300 font-semibold px-3 py-1.5 rounded transition-colors disabled:opacity-50 cursor-pointer"
                                                 >

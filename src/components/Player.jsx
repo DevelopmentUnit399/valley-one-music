@@ -1,6 +1,7 @@
 import React, { useContext, useRef, useState, useEffect, useCallback } from 'react'
 import { assets } from '../assets/assets'
 import { PlayerContext } from '../context/PlayerContext'
+import { useSettings } from '../context/SettingsContext'
 
 const Player = () => {
     const { 
@@ -21,6 +22,8 @@ const Player = () => {
         loading
     } = useContext(PlayerContext)
 
+    const { settings } = useSettings()
+
     const volumeBg = useRef(null)
     const [isDraggingVolume, setIsDraggingVolume] = useState(false)
     const [isDraggingSeek, setIsDraggingSeek] = useState(false)
@@ -28,6 +31,14 @@ const Player = () => {
     // Stores the scrub target percentage (0 to 1) without touching audioRef.current.currentTime immediately
     const pendingSeekRatio = useRef(null)
     const prevVolumeRef = useRef(volume > 0 ? volume : 1)
+
+    // Apply volume normalization based on user settings
+    useEffect(() => {
+        if (audioRef.current) {
+            const targetVolume = settings?.normalizeVolume ? volume * 0.75 : volume
+            audioRef.current.volume = Math.max(0, Math.min(1, targetVolume))
+        }
+    }, [volume, settings?.normalizeVolume, audioRef])
 
     const toggleMute = () => {
         if (volume > 0) {
@@ -130,7 +141,7 @@ const Player = () => {
             {/* Left section: track info */}
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 max-w-[25%] sm:max-w-[200px]">
                 {loading || !track ? (
-                    <div className="flex items-center gap-2 sm: gap-3 animate-pulse w-full">
+                    <div className="flex items-center gap-2 sm:gap-3 animate-pulse w-full">
                         <div className="w-8 sm:w-12 h-8 sm:h-12 rounded bg-zinc-800 shrink-0" />
                         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                             <div className="h-3 bg-zinc-800 rounded w-16" />
@@ -143,7 +154,7 @@ const Player = () => {
                         <div className="min-w-0 overflow-hidden">
                             <p
                                 className={`text-xs sm:text-sm font-semibold leading-tight ${
-                                    playStatus ? 'animage-marquee' : 'truncate'
+                                    playStatus ? 'animate-marquee' : 'truncate'
                                 }`}
                             >
                                 {track.name}
