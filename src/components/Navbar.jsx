@@ -150,7 +150,7 @@ const Navbar = () => {
                   {/* Admin Option inside Dropdown */}
                   {isAdmin && (
                     <a
-                      href="https://v1.garrettu.com"
+                      href="https://v1admin.garrettu.com"
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => setMenuOpen(false)}
