@@ -6,6 +6,8 @@ import { useContext } from 'react'
 import { PlayerContext } from '../context/PlayerContext'
 import Login from './Login'
 import Signup from './Signup'
+import Account from './Account'
+import Settings from './Settings'
 
 const Display = () => {
     const { albumsData } = useContext(PlayerContext)
@@ -34,6 +36,8 @@ const Display = () => {
                 <Route path="/album/:id" element={<DisplayAlbum album={albumItem} />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/settings" element={<Settings />} />
             </Routes>
         </div>
     )

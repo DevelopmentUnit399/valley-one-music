@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sendEmailVerification } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
@@ -7,14 +7,33 @@ import { assets } from '../assets/assets'
 const Navbar = () => {
   const { currentUser, logout, loading } = useAuth()
   const navigate = useNavigate()
+
+  const [menuOpen, setMenuOpen] = useState(false)
   const [resending, setResending] = useState(false)
   const [resentSuccess, setResentSuccess] = useState(false)
+
+  const dropdownRef = useRef(null)
 
   const userInitial = currentUser?.displayName
     ? currentUser.displayName.trim()[0].toUpperCase()
     : currentUser?.email
-    ? currentUser.email.trim()[0].toUpperCase()
-    : 'U'
+      ? currentUser.email.trim()[0].toUpperCase()
+      : 'U'
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setMenuOpen(false)
+      }
+    }
+
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+  }, [menuOpen])
 
   const handleResendVerification = async () => {
     if (!currentUser || resending) return
@@ -30,21 +49,27 @@ const Navbar = () => {
     }
   }
 
+  const handleLogout = async () => {
+    setMenuOpen(false)
+    await logout()
+    navigate('/')
+  }
+
   return (
     <div className="w-full flex justify-between items-center font-semibold px-4 py-3">
       {/* Left: Navigation Arrows */}
       <div className="flex items-center gap-2">
-        <img 
-          onClick={() => navigate(-1)} 
-          className="w-8 bg-black p-2 rounded-2xl cursor-pointer" 
-          src={assets.arrow_left} 
-          alt="Back" 
+        <img
+          onClick={() => navigate(-1)}
+          className="w-8 bg-black p-2 rounded-2xl cursor-pointer"
+          src={assets.arrow_left}
+          alt="Back"
         />
-        <img 
-          onClick={() => navigate(1)} 
-          className="w-8 bg-black p-2 rounded-2xl cursor-pointer" 
-          src={assets.arrow_right} 
-          alt="Forward" 
+        <img
+          onClick={() => navigate(1)}
+          className="w-8 bg-black p-2 rounded-2xl cursor-pointer"
+          src={assets.arrow_right}
+          alt="Forward"
         />
       </div>
 
@@ -82,31 +107,82 @@ const Navbar = () => {
             )}
 
             {/* User Avatar */}
-            <div 
-              title={currentUser.email}
-              className="bg-purple-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer select-none"
-            >
-              {userInitial}
-            </div>
+            <div className="relative" ref={dropdownRef}>
+              <div
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className={`bg-purple-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm cursor-pointer select-none transition-transform hover:scale-105 active:scale-95 ${menuOpen ? 'ring-2 ring-white/50' : ''
+                  }`}
+              >
+                {userInitial}
+              </div>
 
-            {/* Log Out */}
-            <button 
-              onClick={logout}
-              className="text-xs bg-zinc-800 text-white hover:bg-zinc-700 px-3 py-1.5 rounded-full cursor-pointer transition-colors"
-            >
-              Log Out
-            </button>
+              {/* Styled Dropdown Menu */}
+              {menuOpen && (
+                <div className="absolute right-0 top-11 w-48 bg-[#282828] border border-[#3e3e3e] rounded-md shadow-2xl p-1 z-50 text-xs font-medium animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-2 border-b border-[#3e3e3e]/60 mb-1">
+                    <p className="font-semibold text-white truncate">{currentUser.displayName || 'User'}</p>
+                    <p className="text-zinc-400 truncate text-[11px]">{currentUser.email}</p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false)
+                      window.open('/account', '_blank', 'noopener,noreferrer')
+                    }}
+                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-between"
+                  >
+                    Account
+                    <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+
+                  {/* <button
+                    onClick={() => { setMenuOpen(false); navigate('/profile') }}
+                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    Profile
+                  </button> */}
+
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/support') }}
+                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-between"
+                  >
+                    Support
+                    <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/settings') }}
+                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    Settings
+                  </button>
+
+                  <div className="h-[1px] bg-[#3e3e3e]/60 my-1" />
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-4">
-            <p 
-              onClick={() => navigate('/signup')} 
+            <p
+              onClick={() => navigate('/signup')}
               className="text-gray-400 text-[15px] cursor-pointer hover:text-white"
             >
               Sign up
             </p>
-            <p 
-              onClick={() => navigate('/login')} 
+            <p
+              onClick={() => navigate('/login')}
               className="bg-white text-black text-[15px] px-4 py-1.5 rounded-2xl cursor-pointer"
             >
               Log in
