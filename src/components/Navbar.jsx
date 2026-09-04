@@ -4,6 +4,11 @@ import { sendEmailVerification } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
 import { assets } from '../assets/assets'
 
+const ADMIN_EMAILS = [
+  'garrettuichanco@att.net',
+  'garrettuichanco@gmail.com' // Added in case you log in via your Google account
+]
+
 const Navbar = () => {
   const { currentUser, logout, loading } = useAuth()
   const navigate = useNavigate()
@@ -13,6 +18,8 @@ const Navbar = () => {
   const [resentSuccess, setResentSuccess] = useState(false)
 
   const dropdownRef = useRef(null)
+
+  const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email)
 
   const userInitial = currentUser?.displayName
     ? currentUser.displayName.trim()[0].toUpperCase()
@@ -106,6 +113,22 @@ const Navbar = () => {
               </div>
             )}
 
+            {/* Admin Panel Link (Only visible to allowed emails) */}
+            {isAdmin && (
+              <a
+                href="https://v1admin.garrettu.com"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Admin</span>
+              </a>
+            )}
+
             {/* User Avatar */}
             <div className="relative" ref={dropdownRef}>
               <div
@@ -124,6 +147,22 @@ const Navbar = () => {
                     <p className="text-zinc-400 truncate text-[11px]">{currentUser.email}</p>
                   </div>
 
+                  {/* Admin Option inside Dropdown */}
+                  {isAdmin && (
+                    <a
+                      href="https://v1.garrettu.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full text-left px-3 py-2 rounded text-emerald-400 hover:text-emerald-300 hover:bg-white/10 transition-colors flex items-center justify-between font-semibold"
+                    >
+                      Admin Panel
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+
                   <button
                     onClick={() => {
                       setMenuOpen(false)
@@ -136,13 +175,6 @@ const Navbar = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </button>
-
-                  {/* <button
-                    onClick={() => { setMenuOpen(false); navigate('/profile') }}
-                    className="w-full text-left px-3 py-2 rounded text-zinc-200 hover:text-white hover:bg-white/10 transition-colors"
-                  >
-                    Profile
-                  </button> */}
 
                   <button
                     onClick={() => { setMenuOpen(false); navigate('/support') }}
