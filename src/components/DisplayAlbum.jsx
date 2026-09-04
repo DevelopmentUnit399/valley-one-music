@@ -1,79 +1,101 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import { url } from '../App'
-import { toast } from 'react-toastify'
+import React, { useContext } from 'react'
+import Navbar from './Navbar'
+import { useParams } from 'react-router-dom'
+import { PlayerContext } from '../context/PlayerContext'
+import { assets } from '../assets/assets'
 
-// 1. Ensure this helper is declared outside the component
-const formatDuration = (val) => {
-    if (!val && val !== 0) return '0:00'
-    const str = String(val).trim()
-    
-    if (str.includes(':')) {
-        const [minutes, seconds] = str.split(':')
-        return `${minutes}:${seconds.padStart(2, '0')}`
-    }
-    return str
-}
+const DisplayAlbum = ({ album }) => {
+    const { id } = useParams()
+    const { playWithId, songsData, albumsData } = useContext(PlayerContext)
 
-const ListSong = () => {
-    const [data, setData] = useState([])
+    // Fallback if album prop wasn't resolved yet
+    const albumData = album || albumsData?.find((item) => item._id === id)
 
-    const fetchSongs = async () => {
-        try {
-            const response = await axios.get(`${url}/api/song/list`)
-            if (response.data.success) {
-                setData(response.data.songs)
+    // Filter all songs belonging to this album
+    const albumSongs = songsData?.filter((song) => song.album === albumData?.name) || []
+
+    // Calculate total duration across all tracks in the album
+    const calculateTotalDuration = () => {
+        let totalSeconds = 0
+        albumSongs.forEach((song) => {
+            if (song.duration) {
+                const parts = song.duration.split(':').map(Number)
+                if (parts.length === 2) {
+                    totalSeconds += (parts[0] * 60) + parts[1]
+                } else if (parts.length === 3) {
+                    totalSeconds += (parts[0] * 3600) + (parts[1] * 60) + parts[2]
+                }
             }
-        } catch (error) {
-            toast.error("An error occurred")
+        })
+
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+
+        if (hours > 0) {
+            return `${hours} hr ${minutes} min`
         }
+        return `${minutes} min ${seconds > 0 ? `${seconds} sec` : ''}`.trim()
     }
 
-    const removeSong = async (id) => {
-        try {
-            const response = await axios.post(`${url}/api/song/remove`, { id })
-            if (response.data.success) {
-                toast.success(response.data.message)
-                await fetchSongs()
-            }
-        } catch (error) {
-            toast.error("An error occurred!")
-        }
+    if (!albumData) {
+        return null
     }
-
-    useEffect(() => {
-        fetchSongs()
-    }, [])
 
     return (
-        <div>
-            <p>All Songs List</p>
-            <br />
-            <div>
-                <div className="sm:grid hidden grid-cols-[0.5fr_1fr_2fr_1fr_0.5fr] items-center gap-2.5 p-3 border border-gray-300 text-sm mr-5 bg-gray-100">
-                    <b>Image</b>
-                    <b>Name</b>
-                    <b>Album</b>
-                    <b>Duration</b>
-                    <b>Action</b>
+        <>
+            <Navbar />
+            <div className="mt-10 flex gap-8 flex-col md:flex-row md:items-end">
+                <img className="w-48 rounded shadow-2xl" src={albumData.image} alt={albumData.name} />
+                <div className="flex flex-col">
+                    <p className="text-xs uppercase font-bold text-zinc-300">Album</p>
+                    <h2 className="text-5xl font-extrabold mb-4 md:text-7xl">{albumData.name}</h2>
+                    <p className="text-sm text-zinc-300 mb-2">{albumData.desc}</p>
+                    <p className="mt-1 text-xs text-zinc-400 flex items-center gap-2">
+                        <img 
+                            src={assets.v1_logo_icon} 
+                            alt="Valley One" 
+                            className="w-5 h-5 inline-block object-contain" 
+                        />
+                        <span className="font-bold text-white">Valley One Worship</span>
+                        <span className="font-bold text-white">•</span>
+                        <span className="font-bold text-white">{albumSongs.length} songs</span>
+                        {albumSongs.length > 0 && (
+                            <>
+                                <span className="font-bold text-white">•</span>
+                                <span className="font-bold text-white">about {calculateTotalDuration()}</span>
+                            </>
+                        )}
+                    </p>
                 </div>
-                {data.map((item, index) => {
-                    return (
-                        <div key={index} className="grid grid-cols-[1fr_1fr_1fr] sm:grid-cols-[0.5fr_1fr_2fr_1fr_0.5fr] items-center gap-2.5 p-3 border border-gray-300 text-sm mr-5">
-                            <img className="w-12" src={item.image} alt="" />
-                            <p>{item.name}</p>
-                            <p>{item.album}</p>
-                            
-                            {/* 2. Confirm formatDuration wraps item.duration right here */}
-                            <p>{formatDuration(item.duration)}</p>
-                            
-                            <p className="cursor-pointer" onClick={() => removeSong(item._id)}>X</p>
-                        </div>
-                    )
-                })}
             </div>
-        </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 mt-10 mb-4 pl-2 text-[#a7a7a7] text-sm">
+                <p><b className="mr-4">#</b>Title</p>
+                <p>Album</p>
+                <p className="hidden sm:block">Date Added</p>
+                <img className="m-auto w-4" src={assets.clock_icon} alt="Duration" />
+            </div>
+            <hr className="border-[#ffffff26]" />
+
+            {albumSongs.map((item, index) => (
+                <div
+                    onClick={() => playWithId(item._id)}
+                    key={item._id || index}
+                    className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 p-2 items-center text-[#a7a7a7] hover:bg-[#ffffff2b] cursor-pointer rounded transition-colors"
+                >
+                    <p className="text-white flex items-center">
+                        <b className="mr-4 text-[#a7a7a7]">{index + 1}</b>
+                        <img className="inline w-10 h-10 object-cover mr-5 rounded" src={item.image} alt={item.name} />
+                        <span className="truncate">{item.name}</span>
+                    </p>
+                    <p className="text-[15px] truncate">{albumData.name}</p>
+                    <p className="text-[15px] hidden sm:block">5 days ago</p>
+                    <p className="text-[15px] text-center">{item.duration}</p>
+                </div>
+            ))}
+        </>
     )
 }
 
-export default ListSong
+export default DisplayAlbum
