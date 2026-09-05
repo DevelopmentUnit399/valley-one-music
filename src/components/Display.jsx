@@ -8,6 +8,7 @@ import Login from './Login'
 import Signup from './Signup'
 import Account from './Account'
 import Settings from './Settings'
+import DisplaySearch from './DisplaySearch'
 
 const Display = () => {
     const { albumsData } = useContext(PlayerContext)
@@ -43,6 +44,7 @@ const Display = () => {
             <main className="flex-1 w-full px-4 sm:px-8 py-6">
                 <Routes>
                     <Route path="/" element={<DisplayHome />} />
+                    <Route path="/search" element={<DisplaySearch />} />
                     <Route path="/album/:id" element={<DisplayAlbum album={albumItem} />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />

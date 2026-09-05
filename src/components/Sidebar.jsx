@@ -1,11 +1,26 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { assets } from '../assets/assets'
 import { useSidebar } from '../context/SidebarContext'
+import { auth } from '../firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { ADMIN_EMAIL } from './Navbar'
 
 const Sidebar = () => {
   const navigate = useNavigate()
   const { isSidebarOpen, closeSidebar } = useSidebar()
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // 1. Hooks moved inside the component body
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+    })
+    // 2. Fixed clean-up callback
+    return () => unsubscribe()
+  }, [])
+
+  const isAdmin = currentUser?.email?.trim().toLowerCase() === ADMIN_EMAIL.trim().toLowerCase()
 
   return (
     <>
@@ -77,16 +92,18 @@ const Sidebar = () => {
         </div>
 
         {/* Footer Admin Link */}
-        <div className="p-2 border-t border-[#282828] text-center md:hidden lg:block">
-          <a
-            href="https://v1admin.garrettu.com"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            Admin Portal ↗
-          </a>
-        </div>
+        {isAdmin && (
+          <div className="p-2 border-t border-[#282828] text-center md:hidden lg:block">
+            <a
+              href="https://v1admin.garrettu.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              Admin Portal ↗
+            </a>
+          </div>
+        )}
       </aside>
     </>
   )

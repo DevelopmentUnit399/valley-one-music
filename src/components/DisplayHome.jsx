@@ -13,10 +13,10 @@ const DisplayHome = () => {
   return (
     <>
         <div className="mb-4">
-            <h1 className="my-5 font-bold text-2xl">Featured Charts</h1>
+            <h1 className="my-5 font-bold text-2xl">Featured Albums</h1>
             <div className="flex overflow-x-auto no-scrollbar gap-4">
                 {albumsData && albumsData.length > 0
-                    ? albumsData.map((item, index) => (
+                    ? [...albumsData].reverse().map((item, index) => (
                         <AlbumItem
                             key={item._id || index}
                             name={item.name}
@@ -31,10 +31,10 @@ const DisplayHome = () => {
             </div>
         </div>
         <div className="mb-4">
-            <h1 className="my-5 font-bold text-2xl">Today's Biggets Hits</h1>
+            <h1 className="my-5 font-bold text-2xl">Recent Songs</h1>
             <div className="flex overflow-x-auto no-scrollbar gap-4">
                 {songsData && songsData.length > 0
-                    ? songsData.map((item, index) => (
+                    ? [...songsData].reverse().map((item, index) => (
                         <SongItem
                             key={item._id || index}
                             name={item.name}
