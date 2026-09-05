@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useContext } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import DisplayHome from './DisplayHome'
 import DisplayAlbum from './DisplayAlbum'
-import { useContext } from 'react'
+import Navbar from './Navbar'
 import { PlayerContext } from '../context/PlayerContext'
 import Login from './Login'
 import Signup from './Signup'
@@ -30,15 +30,26 @@ const Display = () => {
     }, [isAlbum, bgColor])
 
     return (
-        <div ref={displayRef} className="w-[100%] m-2 px-6 pt-4 rounded bg-[#121212] text-white overflow-auto lg:w-[75%] lg:ml-0">
-            <Routes>
-                <Route path="/" strict element={<DisplayHome />} />
-                <Route path="/album/:id" element={<DisplayAlbum album={albumItem} />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/settings" element={<Settings />} />
-            </Routes>
+        <div 
+            ref={displayRef} 
+            className="w-full flex-1 h-full overflow-y-auto text-white flex flex-col"
+        >
+            {/* Sticky Top Navbar across the full width */}
+            <header className="sticky top-0 z-30 w-full bg-[#121212]/90 backdrop-blur-md px-4 sm:px-8 py-3 border-b border-[#282828] pointer-events-auto">
+                <Navbar />
+            </header>
+
+            {/* Full-width scrollable page view */}
+            <main className="flex-1 w-full px-4 sm:px-8 py-6">
+                <Routes>
+                    <Route path="/" element={<DisplayHome />} />
+                    <Route path="/album/:id" element={<DisplayAlbum album={albumItem} />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/account" element={<Account />} />
+                    <Route path="/settings" element={<Settings />} />
+                </Routes>
+            </main>
         </div>
     )
 }

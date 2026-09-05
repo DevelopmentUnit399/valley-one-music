@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom'
 import PlayerContextProvider from './context/PlayerContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { SettingsProvider } from './context/SettingsContext.jsx'
+import { SidebarProvider } from './context/SidebarContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
       <SettingsProvider>
         <BrowserRouter>
           <PlayerContextProvider>
-            <App />
+            <SidebarProvider>
+              <App />
+            </SidebarProvider>
           </PlayerContextProvider>
         </BrowserRouter>
       </SettingsProvider>

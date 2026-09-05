@@ -34,7 +34,6 @@ const Settings = () => {
 
   return (
     <div className="w-full h-full flex flex-col overflow-y-auto pb-16">
-      <Navbar />
 
       <div className="max-w-3xl w-full mx-auto px-6 py-6 space-y-8">
         <div className="flex items-center justify-between">

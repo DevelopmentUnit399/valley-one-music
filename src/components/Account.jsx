@@ -15,7 +15,6 @@ import {
     RecaptchaVerifier
 } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
-import Navbar from './Navbar'
 import { auth } from '../firebase'
 
 const Account = () => {
@@ -353,7 +352,6 @@ const Account = () => {
 
     return (
         <div className="w-full h-full flex flex-col overflow-y-auto pb-12">
-            <Navbar />
 
             <div className="max-w-3xl w-full mx-auto px-6 py-6 space-y-8">
                 <div>
